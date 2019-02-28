@@ -78,6 +78,14 @@ public class DefaultFarmerBehavior implements IFarmerBehavior {
         }
         return FarmerResult.FAIL;
     }
+    
+    public FarmerResult tryPlantSeedSameType(ItemStack seed, World world, BlockPos pos, IFarmer farmer, IBlockState blockToGrow) {
+    	int use = 350;
+        if (farmer.getEnergy() >= use * 2 && this.getPlantablePlantFromStack(seed, world, pos).getBlock() ==  blockToGrow.getBlock()) {
+            if (defaultPlant(world, pos, this.getPlantablePlantFromStack(seed, world, pos), farmer, use)) return FarmerResult.SUCCESS;
+        }
+        return FarmerResult.FAIL;
+    }    
 
     @Override
     public FarmerResult tryHarvestPlant(World world, BlockPos pos, IFarmer farmer) {

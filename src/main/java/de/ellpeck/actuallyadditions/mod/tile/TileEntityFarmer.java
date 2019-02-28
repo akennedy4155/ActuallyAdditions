@@ -21,6 +21,7 @@ import de.ellpeck.actuallyadditions.api.internal.IFarmer;
 import de.ellpeck.actuallyadditions.mod.util.ItemStackHandlerAA.IAcceptor;
 import de.ellpeck.actuallyadditions.mod.util.ItemStackHandlerAA.IRemover;
 import de.ellpeck.actuallyadditions.mod.config.values.ConfigIntValues;
+import de.ellpeck.actuallyadditions.mod.misc.apiimpl.farmer.DefaultFarmerBehavior;
 import de.ellpeck.actuallyadditions.mod.util.StackUtil;
 import de.ellpeck.actuallyadditions.mod.util.WorldUtil;
 import net.minecraft.block.BlockHorizontal;
@@ -123,10 +124,26 @@ public class TileEntityFarmer extends TileEntityInventoryBase implements IFarmer
     private void checkBehaviors(BlockPos query) {
 
         if (!sorted) sort();
+    	IBlockState tryingToHarvestBlock = this.world.getBlockState(query);
 
         for (IFarmerBehavior behavior : SORTED_FARMER_BEHAVIORS) {
             FarmerResult harvestResult = behavior.tryHarvestPlant(this.world, query, this);
             if (harvestResult == FarmerResult.STOP_PROCESSING) return;
+            
+            if (behavior instanceof DefaultFarmerBehavior) {
+            	for (int i = 0; i < 6; i++) { //Process seed slots only
+	                ItemStack stack = this.inv.getStackInSlot(i);
+	                IBlockState state = world.getBlockState(query);
+	                if (StackUtil.isValid(stack) && state.getBlock().isReplaceable(world, query)) {
+	                    FarmerResult plantResult = ((DefaultFarmerBehavior)behavior).tryPlantSeedSameType(stack, this.world, query, this, tryingToHarvestBlock);
+	                    if (plantResult == FarmerResult.SUCCESS) {
+	                        this.inv.getStackInSlot(i).shrink(1);
+	                        return;
+	                    } else if (plantResult == FarmerResult.STOP_PROCESSING) 
+	                    	return;
+	                }
+	            }
+            }
             for (int i = 0; i < 6; i++) { //Process seed slots only
                 ItemStack stack = this.inv.getStackInSlot(i);
                 IBlockState state = this.world.getBlockState(query);
